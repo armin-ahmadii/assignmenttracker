@@ -32,7 +32,7 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-With no Supabase settings the app runs **local-only**. There's no sign-in, and everything is stored in the browser's IndexedDB. That's enough to try it, or to use it on one device.
+In dev mode the app runs **local-only**: there's no sign-in, and everything is stored in the browser's IndexedDB. Production builds sign in and sync through Supabase (see below).
 
 ### Tests
 
@@ -46,18 +46,22 @@ The spec's test table lives in `src/domain/computed.test.ts`. It runs against a 
 
 ## Sync across devices (Supabase)
 
-1. Create a Supabase project.
-2. In the SQL editor, run `supabase/migrations/20260925000000_init.sql`. It creates the three tables, row-level security (each user sees only their own rows) and a last-write-wins trigger.
-3. **Authentication → Providers**: enable **Google** (it needs a Google OAuth client) and **Email**.
-4. **Authentication → Email templates → Magic link**: include `{{ .Token }}` so the email also carries a 6-digit code. On iOS, a home-screen app doesn't share storage with Safari, so typing the code into the app is the reliable way to sign in there.
-5. **Authentication → URL configuration**: set the Site URL to where you deploy, and add it to the redirect URLs.
-6. Copy `.env.example` to `.env.local` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+The Supabase project **Due** (`zwcporulazqyqdnmdloy`, us-west-1) already exists with the schema from `supabase/migrations/` applied. Production builds connect to it through `.env.production`. `npm run dev` stays local-only unless you add a `.env.local` with the same two values.
+
+A few settings can only be changed in the Supabase dashboard:
+
+1. **Email sign-in code.** Go to [Email templates](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/templates) and add `Your code: {{ .Token }}` to both the **Magic link** and **Confirm signup** templates. On iOS, a home-screen app doesn't share storage with Safari, so typing the code into the app is the reliable way to sign in there.
+2. **Redirect URLs.** In [URL configuration](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/url-configuration), set the Site URL to your deployed address and add it, plus `http://localhost:5173`, to the redirect URLs.
+3. **Google (optional).** Enable Google under [Providers](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/providers) with a Google Cloud OAuth client. Until then the app shows "Google sign-in isn't set up yet" and email works.
+4. **Keep it single-user.** After your first sign-in, turn off **Allow new users to sign up** (Authentication → Sign In / Providers).
 
 Sign in once and you stay signed in. The session persists, and a stored session is trusted immediately, so the app opens offline.
 
+To use a different project, run the migration there and change the two values in `.env.production`.
+
 ## Deploy and install
 
-`npm run build` produces a static site in `dist/`. Any static host works (Vercel, Netlify, Cloudflare Pages), as long as it serves HTTPS, which service workers require. Set the two `VITE_SUPABASE_*` variables in the host's build settings.
+`npm run build` produces a static site in `dist/`. Any static host works (Vercel, Netlify, Cloudflare Pages), as long as it serves HTTPS, which service workers require. The Supabase settings come from `.env.production`, so the host needs no extra configuration.
 
 On the phone, open the site, then choose **Add to Home Screen** (iOS: Share menu; Android: the browser menu or install prompt). The icon opens straight to Now.
 

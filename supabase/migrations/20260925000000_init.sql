@@ -75,6 +75,7 @@ create index recurring_rules_pull on public.recurring_rules (user_id, server_upd
 create or replace function public.due_last_write_wins()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   if tg_op = 'UPDATE' and new.updated_at < old.updated_at then

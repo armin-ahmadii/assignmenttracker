@@ -1,6 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { sendEmailLink, signInWithGoogle, verifyEmailCode } from '../data/auth';
 
+function friendlyError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String((err as { message?: string })?.message ?? '');
+  if (/failed to fetch|network|load failed/i.test(message)) return "Couldn't reach the server. Check your connection and try again.";
+  if (/provider is not enabled|unsupported provider/i.test(message)) return "Google sign-in isn't set up yet. Use your email instead.";
+  if (/token has expired|invalid/i.test(message)) return 'That code is wrong or has expired. Request a new one.';
+  if (/rate limit|security purposes/i.test(message)) return 'Too many attempts. Wait a minute and try again.';
+  return message || 'Something went wrong. Try again.';
+}
+
 export function SignIn() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -14,7 +23,7 @@ export function SignIn() {
     try {
       await task();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
+      setError(friendlyError(err));
     } finally {
       setBusy(false);
     }
