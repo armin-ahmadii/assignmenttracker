@@ -2216,55 +2216,83 @@ details[open] > summary.term-heading::after {
   }
 }
 
-/* Sign in */
+/* Sync */
 
-.sign-in {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 24px 16px;
+.sync-first {
+  margin-top: 14px;
 }
 
-.sign-in-card {
-  display: grid;
-  gap: 16px;
-  width: min(400px, 100%);
-}
-
-.sign-in-card h1 {
-  margin-top: 28px;
-  font-size: 36px;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-}
-
-.sign-in-lede {
-  margin: 0 0 8px;
-  color: var(--ink-2);
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-.sign-in-form {
-  display: grid;
-  gap: 12px;
-}
-
-.divider {
+.sync-connect {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--ink-3);
-  font-size: 12px;
+  align-items: flex-end;
+  gap: 8px;
+  margin-top: 18px;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
+.sync-connect .field {
   flex: 1;
-  height: 1px;
-  background: var(--ink-4);
+}
+
+.sync-connect input {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  letter-spacing: 0.02em;
+}
+
+.settings-row small[data-status='rejected'],
+.settings-row small[data-status='error'] {
+  color: var(--red);
+}
+
+.share-key {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--wash);
+}
+
+.qr {
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.share-copy p {
+  margin: 0 0 10px;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.sync-key {
+  display: block;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--ground);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.share-copy .settings-note {
+  margin-bottom: 0;
+}
+
+.share-key .secondary-button {
+  background: var(--ground);
 }
 
 /* ───────── Tablet ───────── */
@@ -2710,6 +2738,22 @@ details[open] > summary.term-heading::after {
   .status-control button {
     min-height: 50px;
     font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .share-key {
+    grid-template-columns: 1fr;
+  }
+
+  .qr {
+    width: min(220px, 100%);
+    justify-self: center;
+  }
+
+  .sync-connect {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

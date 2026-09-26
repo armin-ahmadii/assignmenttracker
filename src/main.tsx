@@ -7,12 +7,16 @@ import '@fontsource/inter/latin-600.css';
 import './index.css';
 import { App } from './App';
 import * as actions from './data/actions';
-import { bootAuth } from './data/auth';
 import { store } from './data/store';
 import { sync } from './data/sync';
+import { takeKeyFromUrl } from './data/syncKey';
+import { bootSync, connectFromLink } from './data/syncSetup';
 import { initNav } from './ui/nav';
 import { initTheme } from './ui/theme';
+import { showToast } from './ui/toast';
 
+// Read a connect link before navigation rewrites the address bar.
+const linkKey = takeKeyFromUrl();
 initTheme();
 initNav();
 
@@ -33,13 +37,14 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-// Local data first (it's all the Now screen needs), then auth and sync in the background.
+// Local data first (it's all the Now screen needs), then sync in the background.
 store
   .init()
-  .then(() => {
+  .then(async () => {
     actions.runRecurring();
     sync.afterPull = () => actions.runRecurring();
-    return bootAuth();
+    bootSync();
+    if (linkKey) showToast({ message: await connectFromLink(linkKey) });
   })
   .catch((err) => console.error('Startup failed', err));
 

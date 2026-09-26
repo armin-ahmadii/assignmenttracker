@@ -180,9 +180,10 @@ function ItemDetailBody({ item }: { item: WorkItem }) {
             ))}
           </div>
         </Field>
-        <Field label="Link">
+        <Field label="Link" group>
           <span className="field-combo">
             <TextInput
+              label="Link"
               type="url"
               value={item.link ?? ''}
               placeholder="Assignment page"
@@ -322,11 +323,14 @@ function TextInput({
   value,
   onCommit,
   placeholder,
+  label,
   type = 'text',
 }: {
   value: string;
   onCommit: (value: string) => void;
   placeholder?: string;
+  /** Needed when the input isn't inside a <label>. */
+  label?: string;
   type?: string;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -339,6 +343,7 @@ function TextInput({
       type={type}
       value={draft ?? value}
       placeholder={placeholder}
+      aria-label={label}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}

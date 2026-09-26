@@ -29,9 +29,9 @@ async function quickAdd(page: Page, work: NewWork) {
   const sheet = await openQuickAdd(page);
   await sheet.getByLabel('Name').fill(work.name);
   if (work.newCourse) {
-    const course = sheet.getByLabel('Course');
+    const course = sheet.getByLabel('Course', { exact: true });
     if ((await course.evaluate((el) => el.tagName)) === 'SELECT') await course.selectOption({ label: 'New course…' });
-    await sheet.getByLabel('Course').fill(work.newCourse);
+    await sheet.getByLabel('Course', { exact: true }).fill(work.newCourse);
   }
   if (work.type) await sheet.getByLabel('Type').selectOption(work.type);
   await sheet.getByLabel('Due date').fill(work.date);
@@ -86,8 +86,8 @@ test('first run: capture an item in one sheet, with remembered course and defaul
 
   // The next capture defaults to the last course, Assignment, and 11:59 pm.
   const sheet = await openQuickAdd(page);
-  await expect(sheet.getByLabel('Course')).toHaveValue(/.+/);
-  await expect(sheet.getByLabel('Course').locator('option:checked')).toHaveText('CMPT 225');
+  await expect(sheet.getByLabel('Course', { exact: true })).toHaveValue(/.+/);
+  await expect(sheet.getByLabel('Course', { exact: true }).locator('option:checked')).toHaveText('CMPT 225');
   await expect(sheet.getByLabel('Type')).toHaveValue('Assignment');
   await expect(sheet.getByLabel('Due time')).toHaveValue('23:59');
 });

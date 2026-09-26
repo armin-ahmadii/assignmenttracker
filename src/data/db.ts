@@ -105,14 +105,8 @@ export async function setMeta(db: Db, key: string, value: unknown) {
   await db.put('meta', value, key);
 }
 
-export async function wipe(db: Db) {
-  const tx = db.transaction(['courses', 'rules', 'items', 'outbox', 'meta'], 'readwrite');
-  await Promise.all([
-    tx.objectStore('courses').clear(),
-    tx.objectStore('rules').clear(),
-    tx.objectStore('items').clear(),
-    tx.objectStore('outbox').clear(),
-    tx.objectStore('meta').clear(),
-  ]);
+export async function clearMeta(db: Db, keys: string[]) {
+  const tx = db.transaction('meta', 'readwrite');
+  await Promise.all(keys.map((key) => tx.store.delete(key)));
   await tx.done;
 }

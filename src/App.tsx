@@ -1,6 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { runRecurring } from './data/actions';
-import { useAuth } from './data/auth';
 import { useStore } from './data/store';
 import { Icon } from './ui/Icon';
 import { ClockProvider, useClock } from './ui/clock';
@@ -20,13 +19,10 @@ import { NowView } from './views/NowView';
 import { QuickAdd } from './views/QuickAdd';
 import { SearchSheet } from './views/SearchSheet';
 import { SettingsSheet } from './views/SettingsSheet';
-import { SignIn } from './views/SignIn';
 
 export function App() {
-  const auth = useAuth();
   const { ready } = useStore();
-  if (!ready || auth.status === 'checking') return <div className="boot" aria-busy="true" />;
-  if (auth.status === 'signed-out') return <SignIn />;
+  if (!ready) return <div className="boot" aria-busy="true" />;
   return (
     <ClockProvider>
       <Shell />

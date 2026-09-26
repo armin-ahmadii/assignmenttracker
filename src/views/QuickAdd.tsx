@@ -88,8 +88,9 @@ export function QuickAdd({ parentId }: { parentId?: string }) {
           </label>
           {!parent && (
             <>
-              <label className="field">
-                <span>Course</span>
+              {/* A div, not a label: the combo's button must not become part of the field's name. */}
+              <div className="field">
+                <label htmlFor="qa-course">Course</label>
                 {courseId === NEW_COURSE ? (
                   <span className="field-combo">
                     <input
@@ -120,7 +121,7 @@ export function QuickAdd({ parentId }: { parentId?: string }) {
                   </span>
                 )}
                 {errors.course && <em>{errors.course}</em>}
-              </label>
+              </div>
               <label className="field">
                 <span>Type</span>
                 <span className="select-wrap">

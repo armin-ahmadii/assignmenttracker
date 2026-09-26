@@ -17,8 +17,8 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npx vite build && npx vite preview --port 4173 --strictPort',
-    // Always test the local-only app, even when .env files point at Supabase.
-    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' },
+    // Never the real database: tests intercept this made-up address (see e2e/sync.spec.ts).
+    env: { VITE_SUPABASE_URL: 'https://db.due.test', VITE_SUPABASE_ANON_KEY: 'sb_publishable_e2e' },
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

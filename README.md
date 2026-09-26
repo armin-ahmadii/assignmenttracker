@@ -32,7 +32,7 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-In dev mode the app runs **local-only**: there's no sign-in, and everything is stored in the browser's IndexedDB. Production builds sign in and sync through Supabase (see below).
+In dev mode the app runs **local-only**: everything is stored in the browser's IndexedDB. Production builds can sync your devices through Supabase (see below).
 
 ### Tests
 
@@ -42,22 +42,20 @@ npm run test:e2e     # Playwright, against the production build (laptop + phone)
 npm run typecheck
 ```
 
-The spec's test table lives in `src/domain/computed.test.ts`. It runs against a fixed clock (Fri 2026-09-25, 3:00 pm) and in several time zones. The end-to-end suite pins the browser clock to the same moment. It covers quick add, required fields, swipe and undo, board drag, milestones, rollover, recurring labs, export, dark mode, and reopening offline. The first time, run `npx playwright install chromium`, or set `CHROMIUM_PATH` to an existing Chromium.
+The spec's test table lives in `src/domain/computed.test.ts`. It runs against a fixed clock (Fri 2026-09-25, 3:00 pm) and in several time zones. The end-to-end suite pins the browser clock to the same moment. It covers quick add, required fields, swipe and undo, board drag, milestones, rollover, recurring labs, export, dark mode, and reopening offline. `e2e/sync.spec.ts` pairs a laptop and a phone (two browsers) through a faked database that follows the same rules as the real functions. The first time, run `npx playwright install chromium`, or set `CHROMIUM_PATH` to an existing Chromium.
 
-## Sync across devices (Supabase)
+## Sync between your devices
 
-The Supabase project **Due** (`zwcporulazqyqdnmdloy`, us-west-1) already exists with the schema from `supabase/migrations/` applied. Production builds connect to it through `.env.production`. `npm run dev` stays local-only unless you add a `.env.local` with the same two values.
+There are no accounts and no sign-in. Your work lives in the Supabase project **Due** (`zwcporulazqyqdnmdloy`, us-west-1). Each of your devices holds one private **sync key**, and the database stores only its hash.
 
-A few settings can only be changed in the Supabase dashboard:
+- **First device:** Settings → Sync → **Turn on sync**. This makes the key and registers it; the database accepts exactly one key.
+- **Each other device:** open the connect link once (scan the QR code under **Add another device**, or copy the link), or paste the key into Settings → Sync. On iPhone, open Due from the Home Screen and paste it there, because Home Screen apps don't share storage with Safari.
+- The key is remembered, so you never enter it again on that device. Anyone with the key can see and change your work, so keep it to your own devices.
+- To start over with a new key, delete the row in `private.sync_keys` (Supabase dashboard → Table editor, or SQL) and turn sync on again.
 
-1. **Email sign-in code.** Go to [Email templates](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/templates) and add `Your code: {{ .Token }}` to both the **Magic link** and **Confirm signup** templates. On iOS, a home-screen app doesn't share storage with Safari, so typing the code into the app is the reliable way to sign in there.
-2. **Redirect URLs.** In [URL configuration](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/url-configuration), set the Site URL to your deployed address and add it, plus `http://localhost:5173`, to the redirect URLs.
-3. **Google (optional).** Enable Google under [Providers](https://supabase.com/dashboard/project/zwcporulazqyqdnmdloy/auth/providers) with a Google Cloud OAuth client. Until then the app shows "Google sign-in isn't set up yet" and email works.
-4. **Keep it single-user.** After your first sign-in, turn off **Allow new users to sign up** (Authentication → Sign In / Providers).
+How it's protected: the tables accept no direct API access at all (row-level security with no policies, and no table privileges for the API roles). The app talks to four functions, `due_claim`, `due_check`, `due_push` and `due_pull`, and each checks the key before touching anything. See `supabase/migrations/`.
 
-Sign in once and you stay signed in. The session persists, and a stored session is trusted immediately, so the app opens offline.
-
-To use a different project, run the migration there and change the two values in `.env.production`.
+`.env.production` holds the project URL and publishable key, which are public by design, so production builds sync with no extra setup. `npm run dev` stays local-only unless you add a `.env.local` with the same two values.
 
 ## Deploy and install
 
@@ -77,17 +75,19 @@ src/
     export.ts     JSON / CSV
   data/        local-first storage and sync
     store.ts      in-memory snapshot backed by IndexedDB + an outbox of pending changes
-    sync.ts       push outbox → Supabase, pull changes since a cursor, merge
-    auth.ts       Google / email sign-in, device ↔ account binding
+    sync.ts       push outbox → database, pull changes since a cursor, merge
+    syncKey.ts    the device's private sync key (generate, normalise, connect links)
+    syncSetup.ts  turn on sync, connect a device, disconnect
+    remote.ts     fetch wrapper for the database functions
     actions.ts    the operations the UI calls
   ui/          shared UI pieces (rows, sheets, toast/undo, navigation, theme)
   views/       one file per screen or sheet
 ```
 
-- **Local-first.** Every read comes from memory, and every write lands in IndexedDB first. Nothing waits on the network, so adding an item or changing a status works in a lecture hall with no signal. Each change is queued in an outbox (one entry per record). The sync engine pushes the outbox and then pulls newer rows. It runs 1.5 s after a change, when the app regains focus or connection, and every minute.
+- **Local-first.** Every read comes from memory, and every write lands in IndexedDB first. Nothing waits on the network, so adding an item or changing a status works in a lecture hall with no signal. Each change is queued in an outbox (one entry per record). The sync engine pushes the outbox and then pulls newer rows through the `due_*` functions, using plain `fetch` with no SDK. It runs 1.5 s after a change, when the app regains focus or connection, and every minute.
 - **Conflicts.** Last write wins, by each record's `updated_at`, both on the device and in a Postgres trigger. Deletes are tombstones (`deleted_at`) so they reach other devices. Item ids are generated on the device. Recurring occurrences get ids derived from their rule, so two offline devices creating the same lab converge on one row.
 - **Time.** Due is stored as a UTC instant plus the zone it was entered in, and displayed in the device's zone. A date with no time means 11:59 pm local. `dueIn(item, now, tz)` and `urgency(item, now)` are pure, and the whole app shares one clock that ticks on each minute boundary.
-- **Startup.** The service worker precaches the app shell and fonts, and the Supabase client loads lazily after first paint. From the service worker, offline, at 4× CPU throttling, the Now list renders in about 0.4–0.7 s.
+- **Startup.** The service worker precaches the app shell and fonts, and sync starts only after first paint. From the service worker, offline, at 4× CPU throttling, the Now list renders in about 0.4–0.7 s.
 
 ### Interpretations of the spec
 

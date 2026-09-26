@@ -8,7 +8,6 @@ import {
   outboxKey,
   saveLocal,
   saveRemote,
-  wipe,
   type AnyRow,
   type Db,
   type OutboxEntry,
@@ -155,14 +154,6 @@ export class Store {
       if (this.outbox.get(entry.key)?.updatedAt === entry.updatedAt) this.outbox.delete(entry.key);
     }
     this.emit();
-  }
-
-  /** Forget everything on this device (sign-out or a different account). */
-  async reset() {
-    for (const table of TABLES) this.raw[table].clear();
-    this.outbox.clear();
-    this.emit();
-    await this.persist(wipe);
   }
 
   private emit(markReady = false) {
