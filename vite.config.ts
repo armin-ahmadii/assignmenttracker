@@ -35,6 +35,10 @@ export default defineConfig({
       },
     }),
   ],
+  preview: {
+    // `npm run share` puts `vite preview` behind a Cloudflare quick tunnel; accept its hostnames.
+    allowedHosts: ['.trycloudflare.com'],
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.test.ts'],

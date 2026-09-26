@@ -34,6 +34,16 @@ npm run dev          # http://localhost:5173
 
 In dev mode the app runs **local-only**: everything is stored in the browser's IndexedDB. Production builds can sync your devices through Supabase (see below).
 
+### Try it on your phone
+
+```bash
+npm run share
+```
+
+This builds the production app, serves it on your computer, and opens a free [Cloudflare quick tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/). The terminal then shows an `https://….trycloudflare.com` link and a QR code; scan it with your phone's camera. It uses `cloudflared` if it's installed and otherwise fetches it automatically. Ctrl+C stops sharing.
+
+Each run gets a new address, and the phone stores data per address. Turn on sync (Settings → Sync), or connect with your key, so your work carries across runs. If this is the first device to turn on sync, copy its key right away (Settings → Sync → Add another device → Copy key), because the key is only on that device.
+
 ### Tests
 
 ```bash
